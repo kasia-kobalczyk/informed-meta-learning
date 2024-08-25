@@ -1,0 +1,194 @@
+wandb_version: 1
+
+project_name:
+  desc: null
+  value: inp_sinusoids
+seed:
+  desc: null
+  value: 0
+train_type:
+  desc: null
+  value: meta_train
+load_it:
+  desc: null
+  value: best
+batch_size:
+  desc: null
+  value: 64
+num_epochs:
+  desc: null
+  value: 1000
+sort_context:
+  desc: null
+  value: false
+lr:
+  desc: null
+  value: 0.001
+decay_lr:
+  desc: null
+  value: 10
+train_split:
+  desc: null
+  value: train
+val_split:
+  desc: null
+  value: val
+n_trials:
+  desc: null
+  value: 1
+beta:
+  desc: null
+  value: 1
+dataset:
+  desc: null
+  value: set-trending-sinusoids
+knowledge_type:
+  desc: null
+  value: abc2
+min_num_context:
+  desc: null
+  value: 0
+max_num_context:
+  desc: null
+  value: 10
+num_targets:
+  desc: null
+  value: 100
+noise:
+  desc: null
+  value: 0.2
+x_sampler:
+  desc: null
+  value: uniform
+use_knowledge:
+  desc: null
+  value: true
+text_encoder:
+  desc: null
+  value: set
+freeze_llm:
+  desc: null
+  value: true
+tune_llm_layer_norms:
+  desc: null
+  value: false
+train_num_z_samples:
+  desc: null
+  value: 1
+test_num_z_samples:
+  desc: null
+  value: 32
+knowledge_dropout:
+  desc: null
+  value: 0.3
+input_dim:
+  desc: null
+  value: 1
+output_dim:
+  desc: null
+  value: 1
+hidden_dim:
+  desc: null
+  value: 128
+xy_encoder_num_hidden:
+  desc: null
+  value: 2
+xy_encoder_hidden_dim:
+  desc: null
+  value: 384
+xy_self_attention:
+  desc: null
+  value: none
+xy_self_attention_num_layers:
+  desc: null
+  value: 1
+data_agg_func:
+  desc: null
+  value: mean
+latent_encoder_num_hidden:
+  desc: null
+  value: 1
+decoder_hidden_dim:
+  desc: null
+  value: 128
+decoder_num_hidden:
+  desc: null
+  value: 3
+decoder_activation:
+  desc: null
+  value: gelu
+x_transf_dim:
+  desc: null
+  value: 128
+x_encoder_num_hidden:
+  desc: null
+  value: 1
+path:
+  desc: null
+  value: latent
+knowledge_extractor_num_hidden:
+  desc: null
+  value: 2
+knowledge_extractor_hidden_dim:
+  desc: null
+  value: 128
+knowledge_dim:
+  desc: null
+  value: 128
+knowledge_merge:
+  desc: null
+  value: sum
+run_name_prefix:
+  desc: null
+  value: trend_sinusoid_informed
+run_name_suffix:
+  desc: null
+  value: tuned
+device:
+  desc: null
+  value: cuda:0
+knowledge_input_dim:
+  desc: null
+  value: 4
+_wandb:
+  desc: null
+  value:
+    python_version: 3.11.9
+    cli_version: 0.15.12
+    framework: huggingface
+    huggingface_version: 4.44.2
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    start_time: 1724576117.139205
+    t:
+      1:
+      - 1
+      - 5
+      - 11
+      - 35
+      - 49
+      - 51
+      - 53
+      - 55
+      - 71
+      2:
+      - 1
+      - 5
+      - 11
+      - 35
+      - 49
+      - 51
+      - 53
+      - 55
+      - 71
+      3:
+      - 2
+      - 13
+      - 16
+      - 23
+      4: 3.11.9
+      5: 0.15.12
+      6: 4.44.2
+      8:
+      - 5
+      13: linux-x86_64

@@ -1,0 +1,49 @@
+
+Evaluating
+[33m[W 2024-08-25 08:19:07,990][39m Trial 0 failed with parameters: {} because of the following error: KeyError('accuracy').
+Traceback (most recent call last):
+  File "/home/knk25/miniconda/envs/llms/lib/python3.11/site-packages/optuna/study/_optimize.py", line 200, in _run_trial
+    value_or_values = func(trial)
+                      ^^^^^^^^^^^
+  File "/mnt/data/knk25.data/informed-meta-learning/models/train_inp.py", line 348, in <lambda>
+    lambda x: meta_train(
+              ^^^^^^^^^^^
+  File "/mnt/data/knk25.data/informed-meta-learning/models/train_inp.py", line 275, in meta_train
+    best_eval_loss = trainer.train()
+                     ^^^^^^^^^^^^^^^
+  File "/mnt/data/knk25.data/informed-meta-learning/models/train_inp.py", line 170, in train
+    losses, val_loss, acc_dict, roc_auc_dict = self.eval()
+                                               ^^^^^^^^^^^
+  File "/mnt/data/knk25.data/informed-meta-learning/models/train_inp.py", line 221, in eval
+    acc = results['accuracy']
+          ~~~~~~~^^^^^^^^^^^^
+KeyError: 'accuracy'
+[33m[W 2024-08-25 08:19:07,992][39m Trial 0 failed with value None.
+Traceback (most recent call last):
+  File "/mnt/data/knk25.data/informed-meta-learning/models/train_inp.py", line 347, in <module>
+    study.optimize(
+  File "/home/knk25/miniconda/envs/llms/lib/python3.11/site-packages/optuna/study/study.py", line 451, in optimize
+    _optimize(
+  File "/home/knk25/miniconda/envs/llms/lib/python3.11/site-packages/optuna/study/_optimize.py", line 66, in _optimize
+    _optimize_sequential(
+  File "/home/knk25/miniconda/envs/llms/lib/python3.11/site-packages/optuna/study/_optimize.py", line 163, in _optimize_sequential
+    frozen_trial = _run_trial(study, func, catch)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/knk25/miniconda/envs/llms/lib/python3.11/site-packages/optuna/study/_optimize.py", line 251, in _run_trial
+    raise func_err
+  File "/home/knk25/miniconda/envs/llms/lib/python3.11/site-packages/optuna/study/_optimize.py", line 200, in _run_trial
+    value_or_values = func(trial)
+                      ^^^^^^^^^^^
+  File "/mnt/data/knk25.data/informed-meta-learning/models/train_inp.py", line 348, in <lambda>
+    lambda x: meta_train(
+              ^^^^^^^^^^^
+  File "/mnt/data/knk25.data/informed-meta-learning/models/train_inp.py", line 275, in meta_train
+    best_eval_loss = trainer.train()
+                     ^^^^^^^^^^^^^^^
+  File "/mnt/data/knk25.data/informed-meta-learning/models/train_inp.py", line 170, in train
+    losses, val_loss, acc_dict, roc_auc_dict = self.eval()
+                                               ^^^^^^^^^^^
+  File "/mnt/data/knk25.data/informed-meta-learning/models/train_inp.py", line 221, in eval
+    acc = results['accuracy']
+          ~~~~~~~^^^^^^^^^^^^
+KeyError: 'accuracy'

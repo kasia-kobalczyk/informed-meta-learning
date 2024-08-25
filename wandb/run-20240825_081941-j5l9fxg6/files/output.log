@@ -1,0 +1,103 @@
+
+Evaluating
+Evaluating
+Evaluating
+Evaluating
+Best model saved at iteration 2000
+Evaluating
+Best model saved at iteration 2500
+Evaluating
+Best model saved at iteration 3000
+Evaluating
+Evaluating
+Evaluating
+Best model saved at iteration 4500
+Evaluating
+Evaluating
+Evaluating
+Evaluating
+Evaluating
+Best model saved at iteration 7000
+Evaluating
+Evaluating
+Evaluating
+Evaluating
+Evaluating
+Evaluating
+Evaluating
+Evaluating
+Evaluating
+[33m[W 2024-08-25 08:33:50,422][39m Trial 0 failed with parameters: {} because of the following error: KeyboardInterrupt().
+Traceback (most recent call last):
+  File "/home/knk25/miniconda/envs/llms/lib/python3.11/site-packages/optuna/study/_optimize.py", line 200, in _run_trial
+    value_or_values = func(trial)
+                      ^^^^^^^^^^^
+  File "/mnt/data/knk25.data/informed-meta-learning/models/train_inp.py", line 346, in <lambda>
+    study.optimize(
+                  ^
+  File "/mnt/data/knk25.data/informed-meta-learning/models/train_inp.py", line 273, in meta_train
+    )
+  File "/mnt/data/knk25.data/informed-meta-learning/models/train_inp.py", line 156, in train
+    for batch in self.train_dataloader:
+  File "/home/knk25/miniconda/envs/llms/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 630, in __next__
+    data = self._next_data()
+           ^^^^^^^^^^^^^^^^^
+  File "/home/knk25/miniconda/envs/llms/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 673, in _next_data
+    data = self._dataset_fetcher.fetch(index)  # may raise StopIteration
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/knk25/miniconda/envs/llms/lib/python3.11/site-packages/torch/utils/data/_utils/fetch.py", line 52, in fetch
+    data = [self.dataset[idx] for idx in possibly_batched_index]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/knk25/miniconda/envs/llms/lib/python3.11/site-packages/torch/utils/data/_utils/fetch.py", line 52, in <listcomp>
+    data = [self.dataset[idx] for idx in possibly_batched_index]
+            ~~~~~~~~~~~~^^^^^
+  File "/mnt/data/knk25.data/informed-meta-learning/datasets/datasets.py", line 48, in __getitem__
+    knowledge = self.get_knowledge(curve_id)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/data/knk25.data/informed-meta-learning/datasets/datasets.py", line 58, in get_knowledge
+    knowledge = torch.tensor(knowledge, dtype=torch.float32).reshape(3, 1)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
+[33m[W 2024-08-25 08:33:50,425][39m Trial 0 failed with value None.
+Traceback (most recent call last):
+  File "/mnt/data/knk25.data/informed-meta-learning/models/train_inp.py", line 345, in <module>
+    if config.train_type == "meta_train":
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/knk25/miniconda/envs/llms/lib/python3.11/site-packages/optuna/study/study.py", line 451, in optimize
+    _optimize(
+  File "/home/knk25/miniconda/envs/llms/lib/python3.11/site-packages/optuna/study/_optimize.py", line 66, in _optimize
+    _optimize_sequential(
+  File "/home/knk25/miniconda/envs/llms/lib/python3.11/site-packages/optuna/study/_optimize.py", line 163, in _optimize_sequential
+    frozen_trial = _run_trial(study, func, catch)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/knk25/miniconda/envs/llms/lib/python3.11/site-packages/optuna/study/_optimize.py", line 251, in _run_trial
+    raise func_err
+  File "/home/knk25/miniconda/envs/llms/lib/python3.11/site-packages/optuna/study/_optimize.py", line 200, in _run_trial
+    value_or_values = func(trial)
+                      ^^^^^^^^^^^
+  File "/mnt/data/knk25.data/informed-meta-learning/models/train_inp.py", line 346, in <lambda>
+    study.optimize(
+                  ^
+  File "/mnt/data/knk25.data/informed-meta-learning/models/train_inp.py", line 273, in meta_train
+    )
+  File "/mnt/data/knk25.data/informed-meta-learning/models/train_inp.py", line 156, in train
+    for batch in self.train_dataloader:
+  File "/home/knk25/miniconda/envs/llms/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 630, in __next__
+    data = self._next_data()
+           ^^^^^^^^^^^^^^^^^
+  File "/home/knk25/miniconda/envs/llms/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 673, in _next_data
+    data = self._dataset_fetcher.fetch(index)  # may raise StopIteration
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/knk25/miniconda/envs/llms/lib/python3.11/site-packages/torch/utils/data/_utils/fetch.py", line 52, in fetch
+    data = [self.dataset[idx] for idx in possibly_batched_index]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/knk25/miniconda/envs/llms/lib/python3.11/site-packages/torch/utils/data/_utils/fetch.py", line 52, in <listcomp>
+    data = [self.dataset[idx] for idx in possibly_batched_index]
+            ~~~~~~~~~~~~^^^^^
+  File "/mnt/data/knk25.data/informed-meta-learning/datasets/datasets.py", line 48, in __getitem__
+    knowledge = self.get_knowledge(curve_id)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/data/knk25.data/informed-meta-learning/datasets/datasets.py", line 58, in get_knowledge
+    knowledge = torch.tensor(knowledge, dtype=torch.float32).reshape(3, 1)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
