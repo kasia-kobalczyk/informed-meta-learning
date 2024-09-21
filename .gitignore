@@ -1,2 +1,5 @@
 saves/**
 **/__pycache__/**
+wandb/**
+data/*
+figures/*

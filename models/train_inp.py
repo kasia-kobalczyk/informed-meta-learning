@@ -7,38 +7,13 @@ import toml
 import optuna
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(os.path.join(__file__, os.pardir))))
-from datasets.datasets import *
-from datasets.utils import get_dataloader
+from datasets.utils import setup_dataloaders
 from models.inp import INP
 from models.loss import ELBOLoss
 
 EVAL_ITER = 500
 SAVE_ITER = 500
 MAX_EVAL_IT = 50
-
-
-def setup_dataloaders(config):
-    extras = {}
-    
-    split_file = config.get('split_file')
-
-    if config.dataset == 'set-trending-sinusoids':
-        train_dataset = SetKnowledgeTrendingSinusoids(split='train', knowledge_type=config.knowledge_type, split_file=split_file)
-        val_dataset = SetKnowledgeTrendingSinusoids(split='val', knowledge_type=config.knowledge_type, split_file=split_file)
-        test_dataset = SetKnowledgeTrendingSinusoids(split='test', knowledge_type=config.knowledge_type, split_file=split_file)
-        extras['knowledge_input_dim'] = train_dataset.knowledge_input_dim
-    
-    else:
-        raise ValueError(f"Unknown dataset {config.dataset}")
-    
-    assert(config.input_dim == test_dataset.dim_x)
-    assert(config.output_dim == test_dataset.dim_y)
-
-    train_dataloader = get_dataloader(train_dataset, config)
-    val_dataloader = get_dataloader(val_dataset, config)
-    test_dataloader = get_dataloader(test_dataset, config)
-
-    return train_dataloader, val_dataloader, test_dataloader, extras
 
 
 class Trainer:
@@ -202,12 +177,7 @@ class Trainer:
         it = 0
         self.model.eval()
         with torch.no_grad():
-            if self.config.dataset in [
-                    'set-trending-sinusoids'
-                ]:
-                loss_num_context = [3, 5, 10]
-            else:
-                loss_num_context = [4, 8, 16, 32]
+            loss_num_context = [3, 5, 10]
             if self.config.min_num_context == 0:
                 loss_num_context = [0] + loss_num_context
             losses_dict = dict(zip(loss_num_context, [[] for _ in loss_num_context]))

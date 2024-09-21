@@ -11,15 +11,15 @@ class SetKnowledgeTrendingSinusoids(Dataset):
             self, split='train', 
             root=f'{ROOT}/trending-sinusoids', 
             knowledge_type='full', 
-            split_file='trending_sinusoids_splits'
+            split_file='splits'
         ):
-        self.data = pd.read_csv(f'{root}/trending_sinusoids.csv')
-        self.knowledge = pd.read_csv(f'{root}/trending_sinusoids_knowledge.csv')
+        self.data = pd.read_csv(f'{root}/data.csv')
+        self.knowledge = pd.read_csv(f'{root}/knowledge.csv')
         self.value_cols = [c for c in self.data.columns if c.isnumeric()]
         self.dim_x = 1
         self.dim_y = 1
         if split_file is None:
-            split_file = 'trending_sinusoids_splits'
+            split_file = 'splits'
         self.train_test_val_split = pd.read_csv(f'{root}/{split_file}.csv')
         self.split = split
         self.knowledge_type = knowledge_type
@@ -29,13 +29,13 @@ class SetKnowledgeTrendingSinusoids(Dataset):
 
     def _split_data(self):
         if self.split == 'train':
-            train_ids = self.train_test_val_split[self.train_test_val_split.split == 'train'].curve_id
+            train_ids = self.train_test_val_split[self.train_test_val_split['split'] == 'train'].curve_id
             self.data = self.data[self.data.curve_id.isin(train_ids)]
         elif self.split == 'val' or self.split == 'valid':
-            val_ids = self.train_test_val_split[self.train_test_val_split.split == 'val'].curve_id
+            val_ids = self.train_test_val_split[self.train_test_val_split['split'] == 'val'].curve_id
             self.data = self.data[self.data.curve_id.isin(val_ids)]
         elif self.split == 'test':
-            test_ids = self.train_test_val_split[self.train_test_val_split.split == 'test'].curve_id
+            test_ids = self.train_test_val_split[self.train_test_val_split['split']== 'test'].curve_id
             self.data = self.data[self.data.curve_id.isin(test_ids)]
 
     def __len__(self):
@@ -85,3 +85,9 @@ class SetKnowledgeTrendingSinusoids(Dataset):
             raise NotImplementedError
 
         return knowledge
+
+
+class SetKnowledgeTrendingSinusoidsDistShift(SetKnowledgeTrendingSinusoids):
+    def __init__(self, split='train', root='./data/trending-sinusoids-dist-shift', knowledge_type='full', split_file='splits'):
+        super().__init__(split=split, root=root, knowledge_type=knowledge_type, split_file=split_file)
+

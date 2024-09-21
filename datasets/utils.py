@@ -1,5 +1,9 @@
 import torch
 import numpy as np
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.abspath(os.path.join(__file__, os.pardir))))
+from datasets.datasets import *
 
 def collate_fn(batch, kwargs, collate_knowledge=True):
     num_context_ls = list(range(kwargs['min_num_context'], kwargs['max_num_context']))
@@ -75,7 +79,7 @@ def collate_fn(batch, kwargs, collate_knowledge=True):
 
 
 def get_dataloader(dataset, config):
-    if config.dataset in ['set-trending-sinusoids']:
+    if config.dataset in ['set-trending-sinusoids', 'set-trending-sinusoids-dist-shift']:
         collate_knowledge = True
     else:
         collate_knowledge = False
@@ -85,6 +89,36 @@ def get_dataloader(dataset, config):
         collate_fn=lambda batch: collate_fn(batch, config.__dict__, collate_knowledge)
     )
     return data_loader
+
+def setup_dataloaders(config):
+    extras = {}
+    
+    split_file = config.get('split_file')
+
+    if config.dataset == 'set-trending-sinusoids':
+        train_dataset = SetKnowledgeTrendingSinusoids(split='train', knowledge_type=config.knowledge_type)
+        val_dataset = SetKnowledgeTrendingSinusoids(split='val', knowledge_type=config.knowledge_type)
+        test_dataset = SetKnowledgeTrendingSinusoids(split='test', knowledge_type=config.knowledge_type)
+        extras['knowledge_input_dim'] = train_dataset.knowledge_input_dim
+
+    elif config.dataset == 'set-trending-sinusoids-dist-shift':
+        train_dataset = SetKnowledgeTrendingSinusoidsDistShift(split='train', knowledge_type=config.knowledge_type)
+        val_dataset = SetKnowledgeTrendingSinusoidsDistShift(split='val', knowledge_type=config.knowledge_type)
+        test_dataset = SetKnowledgeTrendingSinusoidsDistShift(split='test', knowledge_type=config.knowledge_type)
+        extras['knowledge_input_dim'] = train_dataset.knowledge_input_dim
+
+    
+    else:
+        raise ValueError(f"Unknown dataset {config.dataset}")
+    
+    assert(config.input_dim == test_dataset.dim_x)
+    assert(config.output_dim == test_dataset.dim_y)
+
+    train_dataloader = get_dataloader(train_dataset, config)
+    val_dataloader = get_dataloader(val_dataset, config)
+    test_dataloader = get_dataloader(test_dataset, config)
+
+    return train_dataloader, val_dataloader, test_dataloader, extras
 
 
 if __name__ == "__main__":
