@@ -8,6 +8,7 @@ from models.loss import NLL
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
+from scipy.stats import bootstrap
 
 EVAL_CONFIGS = {
     'test_num_z_samples': 32,
@@ -84,7 +85,10 @@ def plot_predictions(ax, i, outputs, x_context, y_context, x_target, extras, col
         ax.plot(extras['x'][i].flatten().cpu(), extras['y'][i].flatten().cpu(), color='black', linestyle='--', alpha=0.8)
 
 
-def get_summary_df(model_dict, config_dict, data_loader, eval_type_ls, model_names):
+def uniform_sampler(num_targets, num_context):
+    return np.random.choice(list(range(num_targets)), num_context, replace=False)
+
+def get_summary_df(model_dict, config_dict, data_loader, eval_type_ls, model_names, sampler=uniform_sampler):
     # Evaluate the models on different knowledge types
     loss = NLL()
 
@@ -121,8 +125,8 @@ def get_summary_df(model_dict, config_dict, data_loader, eval_type_ls, model_nam
             x_target = x_target.to(config.device)
             y_target = y_target.to(config.device)
             
-            sample_idx = np.random.choice(list(range(x_target.shape[-2])), max(num_context_ls))
-
+            sample_idx = sampler(x_target.shape[1], max(num_context_ls))
+            
             for _ in range(3):
                 for num_context in num_context_ls:
                     x_context = x_target[:, sample_idx[:num_context], :]
@@ -242,3 +246,29 @@ def get_uncertainties(outputs_dict, num_context_ls, knowledge_type_ls, model_nam
                 }
 
     return uncertainties
+
+
+def get_auc_summary(losses, model_name, eval_type_ls, num_context_ls):
+    auc_summary = {}
+    auc_values = {}
+    improvement = {}
+
+    for eval_type in eval_type_ls:
+        base = -torch.stack([torch.concat(losses[model_name]['raw'][num_context]) for num_context in num_context_ls]).cpu().numpy()
+        informed = -torch.stack([torch.concat(losses[model_name][eval_type][num_context]) for num_context in num_context_ls]).cpu().numpy()
+        N = base.shape[-1]
+        # estimate the area under the curve with the trapezoidal rule
+        from sklearn.metrics import auc
+        base_auc = np.array([auc(num_context_ls, base[:, i]) for i in range(N)])
+        informed_auc = np.array([auc(num_context_ls, informed[:, i]) for i in range(N)])
+        improvement[eval_type] = (
+            [((informed[i, :] - base[i, :]) / -base[i, :]).mean() for i in range(len(num_context_ls))],
+            [bootstrap(((informed[i, :] - base[i, :]) / -base[i, :],), np.mean, confidence_level=0.9).standard_error for i in range(len(num_context_ls))]
+        )
+        auc_values[eval_type] = (informed_auc - base_auc) / -base_auc
+        auc_summary[eval_type] = (
+            np.mean(auc_values[eval_type]),
+            bootstrap((auc_values[eval_type], ), np.mean, confidence_level=0.9).standard_error
+        )
+    
+    return auc_summary

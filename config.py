@@ -91,7 +91,7 @@ def main():
     parser.add_argument('--knowledge-extractor-num-hidden', type=int, help='Number of knowledge extractor hidden layers', default=2)
     parser.add_argument('--knowledge-extractor-hidden-dim', type=int, help='Knowledge extractor hidden dimension', default=DEFAULT_HIDDEN_DIM)
     parser.add_argument('--knowledge-dim', type=int, help='Knowledge dimension', default=DEFAULT_HIDDEN_DIM)
-    parser.add_argument('--knowledge-merge', type=str, help='Knowledge merge', default='concat', choices=['concat', 'sum', 'mlp', 'self-attention', 'self-attention-2', 'mean'])
+    parser.add_argument('--knowledge-merge', type=str, help='Knowledge merge', default='concat', choices=['concat', 'sum', 'mlp'])
     # saving args
     parser.add_argument('--run-name-prefix', type=str, help='Run name prefix', default='run')
     parser.add_argument('--run-name-suffix', type=str, help='Run name suffix', default='tuned')

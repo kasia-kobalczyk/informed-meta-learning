@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import torch
 from torch.utils.data import Dataset
-
+from datasets import load_from_disk
 
 ROOT = '/mnt/data/knk25.data/informed-meta-learning/data/'
 
@@ -91,3 +91,71 @@ class SetKnowledgeTrendingSinusoidsDistShift(SetKnowledgeTrendingSinusoids):
     def __init__(self, split='train', root='./data/trending-sinusoids-dist-shift', knowledge_type='full', split_file='splits'):
         super().__init__(split=split, root=root, knowledge_type=knowledge_type, split_file=split_file)
 
+
+   
+class Temperatures(Dataset):
+    def __init__(self, split='train', root='./data/temperatures', knowledge_type='min_max'):
+        region = 'AK'
+        self.data = pd.read_csv(f'{root}/2021-2022_{region}.csv')
+        self.splits = pd.read_csv(f'{root}/2021-2022_{region}_splits.csv')
+        if knowledge_type == 'desc':
+            self.knowledge_df = pd.read_csv(f'{root}/2021-2022_{region}_gpt_descriptions.csv')    
+        elif knowledge_type in ['min_max', 'min_max_month']:
+            self.knowledge_df = pd.read_csv(f'{root}/2021-2022_{region}_knowledge.csv')
+        elif knowledge_type == 'llama_embed':
+            knowledge_ds = load_from_disk(f'{root}/2021-2022_{region}_desc-embeded-llama')
+            self.knowledge_df = knowledge_ds.to_pandas()
+        
+        
+        self.knowledge_type = knowledge_type
+        if knowledge_type == 'min_max':
+            self.knowledge_input_dim = 2
+        elif knowledge_type == 'min_max_month':
+            self.knowledge_input_dim = 3
+        elif knowledge_type == 'desc':
+            self.knowledge_input_dim = None
+        elif knowledge_type =='llama_embed':
+            self.knowledge_input_dim = 4096
+        else:
+            raise NotImplementedError
+
+        self.split = split
+        if self.split == 'train':
+            dates = self.splits[self.splits.split == 'train'].LST_DATE
+        elif self.split == 'val' or self.split == 'valid':
+            dates = self.splits[self.splits.split == 'val'].LST_DATE
+        elif self.split == 'test':
+            dates = self.splits[self.splits.split == 'test'].LST_DATE
+        
+        self.data = self.data[self.data.LST_DATE.isin(dates)]
+
+        self.dim_x = 1
+        self.dim_y = 1
+
+    def __len__(self):
+        return len(self.data)
+    
+    def __getitem__(self, idx):
+        y = self.data.iloc[idx, 1:].values
+        lst_date = self.data.iloc[idx, 0]   
+        k_idx = self.knowledge_df[self.knowledge_df.LST_DATE == lst_date].index[0]
+        x = np.linspace(-2, 2, len(y))
+        if self.knowledge_type == 'min_max':
+            knowledge = self.knowledge_df[['min', 'max']].iloc[k_idx, :].values
+            knowledge = torch.tensor(knowledge, dtype=torch.float32)
+        elif self.knowledge_type == 'min_max_month':
+            knowledge = self.knowledge_df[['min', 'max', 'month']].iloc[k_idx, :].values
+            knowledge = torch.tensor(knowledge, dtype=torch.float32)
+        elif self.knowledge_type == 'desc':
+            knowledge = self.knowledge_df.iloc[k_idx, :].description
+        elif self.knowledge_type == 'llama_embed':
+            knowledge = self.knowledge_df.iloc[k_idx, :].embed[0]
+            knowledge = torch.tensor(knowledge)
+        else:
+            raise NotImplementedError
+        
+
+        x = torch.tensor(x, dtype=torch.float32).unsqueeze(-1)
+        y = torch.tensor(y, dtype=torch.float32).unsqueeze(-1)
+
+        return x, y, knowledge

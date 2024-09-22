@@ -3,7 +3,7 @@ import numpy as np
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(os.path.join(__file__, os.pardir))))
-from datasets.datasets import *
+from dataset.dataset import *
 
 def collate_fn(batch, kwargs, collate_knowledge=True):
     num_context_ls = list(range(kwargs['min_num_context'], kwargs['max_num_context']))
@@ -99,17 +99,22 @@ def setup_dataloaders(config):
         train_dataset = SetKnowledgeTrendingSinusoids(split='train', knowledge_type=config.knowledge_type)
         val_dataset = SetKnowledgeTrendingSinusoids(split='val', knowledge_type=config.knowledge_type)
         test_dataset = SetKnowledgeTrendingSinusoids(split='test', knowledge_type=config.knowledge_type)
-        extras['knowledge_input_dim'] = train_dataset.knowledge_input_dim
-
+       
     elif config.dataset == 'set-trending-sinusoids-dist-shift':
         train_dataset = SetKnowledgeTrendingSinusoidsDistShift(split='train', knowledge_type=config.knowledge_type)
         val_dataset = SetKnowledgeTrendingSinusoidsDistShift(split='val', knowledge_type=config.knowledge_type)
         test_dataset = SetKnowledgeTrendingSinusoidsDistShift(split='test', knowledge_type=config.knowledge_type)
-        extras['knowledge_input_dim'] = train_dataset.knowledge_input_dim
-
+    
+    elif config.dataset == 'temperature':
+        train_dataset = Temperatures(split='train', knowledge_type=config.knowledge_type)
+        val_dataset = Temperatures(split='val', knowledge_type=config.knowledge_type)
+        test_dataset = Temperatures(split='test', knowledge_type=config.knowledge_type)
     
     else:
         raise ValueError(f"Unknown dataset {config.dataset}")
+
+    extras['knowledge_input_dim'] = train_dataset.knowledge_input_dim
+
     
     assert(config.input_dim == test_dataset.dim_x)
     assert(config.output_dim == test_dataset.dim_y)
@@ -127,24 +132,24 @@ if __name__ == "__main__":
     module_path = os.path.abspath(os.path.join('..'))
     if module_path not in sys.path:
         sys.path.append(module_path)
-    from datasets.datasets import *
+    from dataset.dataset import *
     from argparse import Namespace
 
     config = Namespace(
         min_num_context=1,
-        max_num_context=25,
+        max_num_context=15,
         num_targets=50,
-        noise=0.5,
+        noise=0,
         x_sampler='uniform',
-        batch_size=500,
-        dataset='new-regression',
+        batch_size=4,
+        dataset='temperatures',
         knowledge_type='set'
     )
-    dataset = SetKnowledgeTrendingSinusoids(root='data/toy-regression', split='test', knowledge_type='b')
+    dataset = Temperatures(split='test', knowledge_type='llama_embed')
     data_loader = get_dataloader(dataset, config)
 
     for batch in data_loader:
         (x_context, y_context), (x_target, y_target), knowledge, extras = batch
         print(x_context.shape, y_context.shape, x_target.shape, y_target.shape)
-        print(knowledge[:, 0, 3].mean())
+        print(knowledge[0].shape)
         break

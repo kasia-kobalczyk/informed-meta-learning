@@ -25,12 +25,11 @@ class INP(nn.Module):
         x_context = self.x_encoder(x_context)  # [bs, num_context, x_transf_dim]
         x_target = self.x_encoder(x_target)  # [bs, num_context, x_transf_dim]
 
-        R = self.encode_globally(x_context, y_context)
+        R = self.encode_globally(x_context, y_context, x_target)
 
         z_samples, q_z_Cc, q_zCct = self.sample_latent(
             R, x_context, x_target, y_target, knowledge
         )
-
         # reshape z_samples to the shape of x_target
         R_target = self.target_dependent_representation(R, x_target, z_samples)
 
@@ -38,29 +37,16 @@ class INP(nn.Module):
 
         return p_yCc, z_samples, q_z_Cc, q_zCct
 
-
-    def get_global_representation(self, x, y):
-        """
-        Creates the global representation of x and y values
-        """
-        x = self.x_encoder(x)  # [bs, num_samples, x_transf_dim]
-
-        R = torch.zeros((x.shape[0], 1, self.config.hidden_dim)).to(x.device)
-
-        R = self.encode_globally(x, y)
-
-        return R
-
-    def encode_globally(self, x_context, y_context):
+    def encode_globally(self, x_context, y_context, x_target):
         """
         Encode context set all together
         """
-        R = self.xy_encoder(x_context, y_context)
+        R = self.xy_encoder(x_context, y_context, x_target)
 
         if x_context.shape[1] == 0:
             R = torch.zeros((R.shape[0], 1, R.shape[-1])).to(R.device)
 
-        return R
+        return R   
     
     def get_knowledge_embedding(self, knowledge):
         return self.latent_encoder.get_knowledge_embedding(knowledge)
@@ -73,7 +59,7 @@ class INP(nn.Module):
         q_zCc = self.infer_latent_dist(R, knowledge, x_context.shape[1])
 
         if y_target is not None and self.training:
-            R_from_target = self.encode_globally(x_target, y_target)
+            R_from_target = self.encode_globally(x_target, y_target, x_target)
             q_zCct = self.infer_latent_dist(R_from_target, knowledge, x_target.shape[1])
             sampling_dist = q_zCct
         else:
@@ -104,6 +90,7 @@ class INP(nn.Module):
         R_target = z_samples  # [num_z_samples, batch_size, 1, hidden_dim]
 
         # [num_z_samples, batch_size, num_targets, hidden_dim]
+
         R_target = R_target.expand(-1, -1, x_target.shape[1], -1)
 
         return R_target
@@ -112,22 +99,14 @@ class INP(nn.Module):
         """
         Decode the target set given the target dependent representation
         """
-        if self.config.dataset == 'metaMIMIC':
+        p_y_stats = self.decoder(x_target, R_target)
 
-            logits = self.decoder(x_target, R_target)
-            probs = torch.sigmoid(logits)
-            probs = probs[:, :0, :, 0].unsqueeze(-1)
-            p_yCc = Bernoulli(probs=probs)
+        p_y_loc, p_y_scale = p_y_stats.split(self.config.output_dim, dim=-1)
+        
+        # bound the variance (minimum 0.1)
+        p_y_scale = 0.1 + 0.9 * F.softplus(p_y_scale)
 
-        else:
-            p_y_stats = self.decoder(x_target, R_target)
-
-            p_y_loc, p_y_scale = p_y_stats.split(self.config.output_dim, dim=-1)
-            
-            # bound the variance (minimum 0.1)
-            p_y_scale = 0.1 + 0.9 * F.softplus(p_y_scale)
-
-            p_yCc = MultivariateNormalDiag(p_y_loc, p_y_scale)
+        p_yCc = MultivariateNormalDiag(p_y_loc, p_y_scale)
 
         return p_yCc
     
@@ -135,8 +114,8 @@ class INP(nn.Module):
 if __name__ == "__main__":
     from argparse import Namespace
     from loss import ELBOLoss
-    from datasets.utils import get_dataloader
-    from datasets.datasets import *
+    from dataset.utils import get_dataloader
+    from dataset.datasets import *
     import numpy as np
     import random
 

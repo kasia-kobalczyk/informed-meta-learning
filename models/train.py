@@ -7,7 +7,7 @@ import toml
 import optuna
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(os.path.join(__file__, os.pardir))))
-from datasets.utils import setup_dataloaders
+from dataset.utils import setup_dataloaders
 from models.inp import INP
 from models.loss import ELBOLoss
 

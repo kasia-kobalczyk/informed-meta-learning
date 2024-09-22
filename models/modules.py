@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.nn import MultiheadAttention
 from transformers import RobertaModel, RobertaTokenizer
 
 class MLP(nn.Module):
@@ -47,19 +48,29 @@ class XYEncoder(nn.Module):
             num_hidden=config.xy_encoder_num_hidden,
             output_size=config.hidden_dim,
         )
+        if config.data_agg_func == 'cross-attention':
+            self.cross_attention = MultiheadAttention(
+                config.hidden_dim,
+                num_heads=4,
+                batch_first=True,
+            )
+
         self.config = config
 
-    def forward(self, x, y):
+    def forward(self, x_context, y_context, x_target):
         """
         Encode the context set all together
         """
-        xy = torch.cat([x, y], dim=-1)
+        xy = torch.cat([x_context, y_context], dim=-1)
         Rs = self.pairer(xy)
         # aggregate
         if self.config.data_agg_func == 'mean':
             R = torch.mean(Rs, dim=1, keepdim=True)  # [bs, 1, r_dim]
         elif self.config.data_agg_func == 'sum':
             R = torch.sum(Rs, dim=1, keepdim=True)
+        elif self.config.data_agg_func == 'cross-attention':
+            Rs = self.cross_attention(x_target, x_context, Rs)[0]
+            R = torch.mean(Rs, dim=1, keepdim=True)
         return R
 
 
@@ -187,8 +198,10 @@ class KnowledgeEncoder(nn.Module):
 
     def forward(self, knowledge):
         text_representation = self.text_encoder(knowledge)
-        knowledge_representation = self.knowledge_extractor(text_representation)
-        return knowledge_representation
+        k = self.knowledge_extractor(text_representation)
+        if k.dim() == 2:
+            k = k.unsqueeze(1)
+        return k
 
 
 class LatentEncoder(nn.Module):
