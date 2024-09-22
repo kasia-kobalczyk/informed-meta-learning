@@ -146,16 +146,6 @@ class Trainer:
                     wandb.log({"eval_loss": val_loss})
                     for k, v in losses.items():
                         wandb.log({f"eval_loss_{k}": v})
-                        
-                    # if it % SAVE_ITER == 0 and it > 0:
-                    #     torch.save(
-                    #         self.model.state_dict(),
-                    #         f"{self.save_dir}/model_{self.last_save_it + it}.pt",
-                    #     )
-                    #     torch.save(
-                    #         self.optimizer.state_dict(),
-                    #         f"{self.save_dir}/optim_{self.last_save_it + it}.pt"
-                    #     )
 
                     if val_loss < min_eval_loss and it > 1500:
                         min_eval_loss = val_loss
@@ -216,19 +206,22 @@ def meta_train(trial, config, run_name_prefix="run"):
     config.device = device
 
     # Create save folder and save config
-    save_no = len(os.listdir("./saves/"))
+    save_dir = f"./saves/{config.project_name}"
+    os.makedirs(save_dir, exist_ok=True)
+
+    save_no = len(os.listdir(save_dir))
     save_no = [
         int(x.split("_")[-1])
-        for x in os.listdir("./saves/")
+        for x in os.listdir(save_dir)
         if x.startswith(run_name_prefix)
     ]
     if len(save_no) > 0:
         save_no = max(save_no) + 1
     else:
         save_no = 0
-    save_dir = f"./saves/{run_name_prefix}_{save_no}"
+    save_dir = f"{save_dir}/{run_name_prefix}_{save_no}"
     os.makedirs(save_dir, exist_ok=True)
-
+    
     trainer = Trainer(config=config, save_dir=save_dir)
 
     config = trainer.config
@@ -238,52 +231,6 @@ def meta_train(trial, config, run_name_prefix="run"):
 
     wandb.init(
         project=config.project_name, name=f"{run_name_prefix}_{save_no}", config=vars(config)
-    )
-    best_eval_loss = trainer.train()
-    wandb.finish()
-
-    return best_eval_loss
-
-
-def load_and_train(trial, config, load_dir, load_it=-1, run_name_suffix="tuned"):
-    device = get_device()
-    config.device = device
-
-    load_dir_base = load_dir
-    load_dir = f"./saves/{load_dir}"
-    save_dir = load_dir + "_" + run_name_suffix
-
-    save_no = len(os.listdir("./saves/"))
-    save_no = [
-        int(x.split("_")[-1])
-        for x in os.listdir("./saves/")
-        if x.startswith(load_dir_base + f"_{run_name_suffix}")
-    ]
-    if len(save_no) > 0:
-        save_no = max(save_no) + 1
-    else:
-        save_no = 0
-    save_dir = f"{save_dir}_{save_no}"
-    os.makedirs(save_dir, exist_ok=True)
-
-    # save the config file
-    config.write_config(f"{save_dir}/config.toml")
-
-    if load_it == -1:
-        models = os.listdir(load_dir)
-        saved_it = [
-            int(x.replace("model_", "").replace(".pt", "")) 
-            for x in models
-            if x.startswith("model_") and "best" not in x
-        ]
-        load_it = max(saved_it)
-
-    load_path = f"{load_dir}/model_{load_it}.pt"
-
-    trainer = Trainer(config=config, save_dir=save_dir, load_path=load_path)
-
-    wandb.init(
-        project=config.project_name, name=save_dir.replace("./saves/", ""), config=vars(config)
     )
     best_eval_loss = trainer.train()
     wandb.finish()
@@ -310,23 +257,11 @@ if __name__ == "__main__":
     # begin study
     study = optuna.create_study(direction="minimize")
 
-    if config.train_type == "meta_train":
-        study.optimize(
-            lambda x: meta_train(
-                x, 
-                config=config, 
-                run_name_prefix=config.run_name_prefix
-            ),
-            n_trials=config.n_trials,
-        )
-    elif config.train_type == "load_and_train":
-        study.optimize(
-            lambda x: load_and_train(
-                x, 
-                config=config, 
-                load_dir=config.load_dir,
-                load_it=config.load_it,
-                run_name_suffix=config.run_name_suffix,
-            ),
-            n_trials=config.n_trials,
-        )
+    study.optimize(
+        lambda x: meta_train(
+            x, 
+            config=config, 
+            run_name_prefix=config.run_name_prefix
+        ),
+        n_trials=config.n_trials,
+    )

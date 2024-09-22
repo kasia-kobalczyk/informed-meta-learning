@@ -7,6 +7,7 @@ from config import Config
 from models.loss import NLL
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 
 EVAL_CONFIGS = {
     'test_num_z_samples': 32,
@@ -160,7 +161,14 @@ def get_summary_df(model_dict, config_dict, data_loader, eval_type_ls, model_nam
                             outputs = tuple([o.cpu() if isinstance(o, torch.Tensor) else o for o in outputs])
                             loss_value = loss.get_loss(outputs[0], outputs[1], outputs[2], outputs[3], y_target)
                             losses[model_name][eval_type][num_context].append(loss_value)
-                            outputs_dict[model_name][eval_type][num_context].append(outputs)
+                            outputs_dict[model_name][eval_type][num_context].append({
+                                'outputs': outputs, 
+                                'x_context': x_context.cpu(), 
+                                'y_context': y_context.cpu(), 
+                                'x_target': x_target.cpu(),
+                                'y_target' : y_target.cpu(),
+                                'knowledge' : knowledge,
+                            })
             
 
     loss_summary = {}
@@ -190,6 +198,47 @@ def get_summary_df(model_dict, config_dict, data_loader, eval_type_ls, model_nam
             summary_df = pd.concat([summary_df, df])
 
 
-    return summary_df, losses
+    return summary_df, losses, outputs_dict
 
-    
+
+def get_uncertainties(outputs_dict, num_context_ls, knowledge_type_ls, model_name='INP', n_batches=-1):
+    if n_batches == -1:
+        n_batches = len(outputs_dict[model_name][knowledge_type_ls[0]][num_context_ls[0]])
+
+    uncertainties = {}
+    for num_context in num_context_ls:
+        uncertainties[num_context] = {}
+        for eval_type in knowledge_type_ls:
+            uncertainties[num_context][eval_type] = {}
+            for batch_idx in range(n_batches):
+                uncertainties[num_context][eval_type][batch_idx] = []
+
+    for num_context in num_context_ls:
+        for eval_type in knowledge_type_ls:
+            print('num_context:', num_context, 'eval_type:', eval_type)
+            for batch_idx in tqdm(range(n_batches)):
+                mu = outputs_dict[model_name][eval_type][num_context][batch_idx]['outputs'][0].mean[:, :, :].cpu() #[num_z_samples, bs, num_targets, 1]
+                sigma = outputs_dict[model_name][eval_type][num_context][batch_idx]['outputs'][0].stddev[:, :, :].cpu() #[num_z_samples, bs, num_targets, 1]
+
+                # predictive uncertainty = MC estimate of int p(y|x, D) log p(y | x, D)dy
+                dy = torch.linspace(-4, 4, 120)
+                #p(dy | x, D) = N(dy ; mu, sigma^2)
+                
+                p_y = np.exp(-0.5 * (dy - mu)**2 / sigma**2) / np.sqrt(2 * np.pi * sigma**2)
+                p_y = p_y.mean(axis=0)
+            
+                p_U = -torch.sum(p_y * torch.log(p_y + 1e-8), axis=-1)
+
+                # aleoric uncertainty = entropy of the normal with sigma^2
+                a_U = (0.5 * np.log(2 * np.pi * np.e * sigma**2)).mean(axis=0).squeeze()
+
+                # epistemic Uncertainty = predictive Uncertainty - aleatoric Uncertainty
+                e_U = p_U - a_U
+
+                uncertainties[num_context][eval_type][batch_idx] =  {
+                    'aleatoric' : a_U,
+                    'epistemic' : e_U,
+                    'predictive' : p_U
+                }
+
+    return uncertainties

@@ -40,7 +40,6 @@ def main():
     parser.add_argument('--project-name', type=str, help='Project name', default='meta-regression')
     # training
     parser.add_argument('--seed', type=int, help='Random seed', default=0)
-    parser.add_argument('--train-type', type=str, help='Training type', default='meta_train', choices=['meta_train', 'load_and_train'])
     parser.add_argument('--load-dir', type=str, help='Load directory')
     parser.add_argument('--load-it', type=str, help='Load iteration', default='best')
     parser.add_argument('--batch-size', type=int, help='Batch size', default=32)
@@ -101,29 +100,8 @@ def main():
 
     args = parser.parse_args()
 
-    if args.train_type == 'load_and_train':
-        print(f'Updating configs from loaded directory {args.load_dir}')
-        NOTHING = object()
-        # only parse the updated argumnets from console
-        config = Config.from_toml(os.path.join('./saves/', args.load_dir, 'config.toml'))
-        args = vars(parser.parse_args())
-        mask = argparse.Namespace(**{arg: NOTHING for arg in args})
-
-        masked_namespace = parser.parse_args(namespace=mask)
-        masked_args = {
-            arg: value
-            for arg, value in vars(masked_namespace).items()
-            if value is not NOTHING
-        }
-
-        # update config with the new arguments
-        for k, v in masked_args.items():
-            print(f'Updating {k} to {v}')
-            setattr(config, k, v)
-
-    else:
-        print('Setting default configs')
-        config = Config.from_args(args)
+    print('Setting config.toml')
+    config = Config.from_args(args)
 
     config.write_config('config.toml')
     
