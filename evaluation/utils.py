@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 from scipy.stats import bootstrap
+from sklearn.metrics import auc
 
 EVAL_CONFIGS = {
     'test_num_z_samples': 32,
@@ -67,11 +68,11 @@ def get_mask(k_type):
     return mask
 
 
-def plot_predictions(ax, i, outputs, x_context, y_context, x_target, extras, color='C0', plot_true=True):
+def plot_predictions(ax, i, outputs, x_context, y_context, x_target, extras, color='C0', plot_true=True, num_z_samples=5):
     mean = outputs[0].mean[:, i].cpu()
     stddev = outputs[0].stddev[:, i].cpu()
     
-    for j in range(min(mean.shape[0], 10)):
+    for j in range(min(mean.shape[0], num_z_samples)):
         ax.plot(x_target[i].flatten().cpu(), mean[j].flatten(), color=color, alpha=0.8)
         ax.fill_between(
                 x_target[i].flatten().cpu(), 
@@ -80,7 +81,7 @@ def plot_predictions(ax, i, outputs, x_context, y_context, x_target, extras, col
                 alpha=0.1,
                 color=color
         )
-    ax.scatter(x_context[i].flatten().cpu(), y_context[i].flatten().cpu(), color='black')
+    ax.scatter(x_context[i].flatten().cpu(), y_context[i].flatten().cpu(), color='black', zorder=10)
     if plot_true:
         ax.plot(extras['x'][i].flatten().cpu(), extras['y'][i].flatten().cpu(), color='black', linestyle='--', alpha=0.8)
 
@@ -258,7 +259,6 @@ def get_auc_summary(losses, model_name, eval_type_ls, num_context_ls):
         informed = -torch.stack([torch.concat(losses[model_name][eval_type][num_context]) for num_context in num_context_ls]).cpu().numpy()
         N = base.shape[-1]
         # estimate the area under the curve with the trapezoidal rule
-        from sklearn.metrics import auc
         base_auc = np.array([auc(num_context_ls, base[:, i]) for i in range(N)])
         informed_auc = np.array([auc(num_context_ls, informed[:, i]) for i in range(N)])
         improvement[eval_type] = (
@@ -271,4 +271,4 @@ def get_auc_summary(losses, model_name, eval_type_ls, num_context_ls):
             bootstrap((auc_values[eval_type], ), np.mean, confidence_level=0.9).standard_error
         )
     
-    return auc_summary
+    return auc_summary, improvement

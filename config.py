@@ -72,26 +72,25 @@ def main():
     parser.add_argument('--knowledge-dropout', type=float, help='Knowledge dropout', default=0.3)
    
     # model architecture
-    DEFAULT_HIDDEN_DIM = 128
     parser.add_argument('--input-dim', type=int, help='Input dimension', default=1)
     parser.add_argument('--output-dim', type=int, help='Output dimension', default=1)
-    parser.add_argument('--hidden-dim', type=int, help='Hidden dimension', default=DEFAULT_HIDDEN_DIM)
+    parser.add_argument('--hidden-dim', type=int, help='Hidden dimension', default=128)
     parser.add_argument('--xy-encoder-num-hidden', type=int, help='Number of XY encoder hidden layers', default=2)
-    parser.add_argument('--xy-encoder-hidden-dim', type=int, help='XY encoder hidden ndimension size', default=DEFAULT_HIDDEN_DIM*3)
+    parser.add_argument('--xy-encoder-hidden-dim', type=int, help='XY encoder hidden ndimension size', default=None)
     parser.add_argument('--xy-self-attention', type=str, help='XY self attention', default='none', choices=['none', 'dot', 'multihead'])
     parser.add_argument('--xy-self-attention-num-layers', type=int, help='XY self attention number of layers', default=1)
     parser.add_argument('--data-agg-func', type=str, help='Data aggregation function', default='mean', choices=['mean', 'sum', 'none', 'cross-attention'])
     parser.add_argument('--latent-encoder-num-hidden', type=int, help='Number of latent encoder hidden layers', default=1)
-    parser.add_argument('--decoder-hidden-dim', type=int, help='Decoder hidden dimension', default=DEFAULT_HIDDEN_DIM )
+    parser.add_argument('--decoder-hidden-dim', type=int, help='Decoder hidden dimension', default=None)
     parser.add_argument('--decoder-num-hidden', type=int, help='Number of decoder hidden layers', default=3)
     parser.add_argument('--decoder-activation', type=str, help='Decoder activation', default='gelu')
-    parser.add_argument('--x-transf-dim', type=int, help='X transformation dimension', default=DEFAULT_HIDDEN_DIM)
+    parser.add_argument('--x-transf-dim', type=int, help='X transformation dimension', default=None)
     parser.add_argument('--x-encoder-num-hidden', type=int, help='Number of X encoder hidden layers', default=1)
     parser.add_argument('--path', type=str, help='Path', default='latent', choices=['latent', 'deterministic', 'both'])
     parser.add_argument('--knowledge-extractor-num-hidden', type=int, help='Number of knowledge extractor hidden layers', default=2)
-    parser.add_argument('--knowledge-extractor-hidden-dim', type=int, help='Knowledge extractor hidden dimension', default=DEFAULT_HIDDEN_DIM)
-    parser.add_argument('--knowledge-dim', type=int, help='Knowledge dimension', default=DEFAULT_HIDDEN_DIM)
+    parser.add_argument('--knowledge-extractor-hidden-dim', type=int, help='Knowledge extractor hidden dimension', default=None)
     parser.add_argument('--knowledge-merge', type=str, help='Knowledge merge', default='concat', choices=['concat', 'sum', 'mlp'])
+    parser.add_argument('--knowledge-dim', type=int, help='Dimension of knowledge representaiton', default=None)
     # saving args
     parser.add_argument('--run-name-prefix', type=str, help='Run name prefix', default='run')
     parser.add_argument('--run-name-suffix', type=str, help='Run name suffix', default='tuned')
@@ -99,6 +98,17 @@ def main():
     # Add other arguments as needed
 
     args = parser.parse_args()
+
+    if args.xy_encoder_hidden_dim is None:
+        args.xy_encoder_hidden_dim = args.hidden_dim * 3
+    if args.decoder_hidden_dim is None:
+        args.decoder_hidden_dim = args.hidden_dim
+    if args.x_transf_dim is None:
+        args.x_transf_dim = args.hidden_dim
+    if args.knowledge_extractor_hidden_dim is None:
+        args.knowledge_extractor_hidden_dim = args.hidden_dim
+    if args.knowledge_dim is None:
+        args.knowledge_dim = args.hidden_dim
 
     print('Setting config.toml')
     config = Config.from_args(args)

@@ -1,12 +1,11 @@
-python config.py --seed 0 --project-name INPs_temperature_test --dataset temperature --input-dim 1 --output-dim 1 --run-name-prefix np_beta_25 --beta 25 --use-knowledge False --noise 0 --min-num-context 0 --max-num-context 15 --num-targets 288 --batch-size 64 --num-epochs 3000 --x-sampler random-uniform-15 --knowledge-merge sum --data-agg-func cross-attention --knowledge-type min_max
+# Train NP without knowledge
+python config.py  --project-name INPs_temperature --dataset temperature  --run-name-prefix np --use-knowledge False --noise 0 --min-num-context 0 --max-num-context 15 --num-targets 288 --batch-size 64 --num-epochs 1000 --x-sampler random-uniform-15 --knowledge-merge sum --knowledge-type min_max --data-agg-func cross-attention --beta 25  --seed 1 --lr 1e-4 --hidden-dim 128 --input-dim 1 --output-dim 1
 python models/train.py
 
-python config.py --seed 0 --project-name INPs_temperature_test --dataset temperature --input-dim 1 --output-dim 1 --run-name-prefix inp_min_max_beta_25 --beta 25 --use-knowledge True --noise 0 --min-num-context 0 --max-num-context 15 --num-targets 288 --batch-size 64 --num-epochs 3000 --x-sampler random-uniform-15  --knowledge-merge sum --data-agg-func cross-attention --knowledge-type min_max
+# Train INP with knowledge as min_max_temperature
+python config.py  --project-name INPs_temperature --dataset temperature  --run-name-prefix inp_min_max --use-knowledge True --noise 0 --min-num-context 0 --max-num-context 15 --num-targets 288 --batch-size 64 --num-epochs 1000 --x-sampler random-uniform-15  --knowledge-merge sum --knowledge-type min_max --data-agg-func cross-attention --beta 25  --seed 1 --lr 1e-4 --hidden-dim 128 --input-dim 1 --output-dim 1
 python models/train.py
 
-python config.py --seed 0 --project-name INPs_temperature_test --dataset temperature --input-dim 1 --output-dim 1 --run-name-prefix inp_llama_embed_beta_25 --beta 25 --use-knowledge True --noise 0 --min-num-context 0 --max-num-context 15 --num-targets 288 --batch-size 64 --num-epochs 3000 --x-sampler random-uniform-15  --knowledge-merge sum --data-agg-func cross-attention --knowledge-type llama_embed
-python models/train.py
-
-
-python config.py --seed 0 --project-name INPs_temperature_test --dataset temperature --input-dim 1 --output-dim 1 --run-name-prefix inp_desc_beta_25 --beta 25 --use-knowledge True --noise 0 --min-num-context 0 --max-num-context 15 --num-targets 288 --batch-size 64 --num-epochs 3000 --x-sampler random-uniform-15 --knowledge-type desc --knowledge-merge sum --knowledge-type desc --text-encoder roberta --freeze-llm True --tune-llm-layer-norms True --data-agg-func cross-attention   
+# Train INP with knowledge as text description
+python config.py  --project-name INPs_temperature --dataset temperature  --run-name-prefix inp_desc --use-knowledge True --noise 0 --min-num-context 0 --max-num-context 15 --num-targets 288 --batch-size 64 --num-epochs 1000 --x-sampler random-uniform-15 --knowledge-merge sum --knowledge-type desc --text-encoder roberta --freeze-llm True --tune-llm-layer-norms True --data-agg-func cross-attention --beta 25  --seed 1 --lr 1e-4 --hidden-dim 128 --input-dim 1 --output-dim 1
 python models/train.py
