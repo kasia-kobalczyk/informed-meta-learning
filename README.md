@@ -4,7 +4,7 @@ This repository contains the code to reproduce the results of the exepriments pr
 
 [Towards Automated Knowledge Integration From Human-Interpretable Representations](https://openreview.net/forum?id=NTHMw8S1Ow) published at ICLR 2025
 
-![figure]|(figure1.png)
+<img src="https://github.com/kasia-kobalczyk/informed-meta-learning/blob/master/figure1.png?raw=true" width="800"/>
 
 ## Experiments with Synthetic Data
 `jobs/run_sinusoids.sh` contais commands that need to be run to reproduce the experiments with synthetic data 
