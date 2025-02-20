@@ -27,13 +27,13 @@ The `environment.yaml` lists the required packages to reproduce the experiments 
 `conda activate inps`
 
 ## Experiments with Synthetic Data
-`jobs/run_sinusoids.sh` contais commands that need to be run to reproduce the experiments with synthetic data 
+`jobs/run_sinusoids.sh` contais commands that need to be run to reproduce the experiments with synthetic data
 
 After training the models, results can be analyzed with the following two notebooks:
-- `evaluation/evaluate_sinusoids.ipynb` contains the analysis of the base experiments 
+- `evaluation/evaluate_sinusoids.ipynb` contains the analysis of the base experiments
 - `evaluation/evaluate_sinusoids_dist_shift.ipynb` contains the analysis of the train/test distribution shift experiment
 
 ## Experiments with the Tempereatures Dataset
-`jobs/run_temperatures.sh` contais commands that need to be run to reproduce the experiments with the tempereatures datasets 
+`jobs/run_temperatures.sh` contais commands that need to be run to reproduce the experiments with the tempereatures datasets
 
 After training the models, results can be analyzes with `evaluation/evaluate_temperature.ipynb`

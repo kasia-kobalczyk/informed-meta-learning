@@ -1,13 +1,14 @@
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
-from torch.distributions import Bernoulli
 
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(os.path.join(__file__, os.pardir))))
 from models.modules import XYEncoder, LatentEncoder, Decoder, XEncoder
 from models.utils import MultivariateNormalDiag
+
 
 class INP(nn.Module):
     def __init__(self, config):
@@ -19,7 +20,6 @@ class INP(nn.Module):
         self.x_encoder = XEncoder(config)
         self.train_num_z_samples = config.train_num_z_samples
         self.test_num_z_samples = config.test_num_z_samples
-
 
     def forward(self, x_context, y_context, x_target, y_target, knowledge=None):
         x_context = self.x_encoder(x_context)  # [bs, num_context, x_transf_dim]
@@ -46,8 +46,8 @@ class INP(nn.Module):
         if x_context.shape[1] == 0:
             R = torch.zeros((R.shape[0], 1, R.shape[-1])).to(R.device)
 
-        return R   
-    
+        return R
+
     def get_knowledge_embedding(self, knowledge):
         return self.latent_encoder.get_knowledge_embedding(knowledge)
 
@@ -102,20 +102,20 @@ class INP(nn.Module):
         p_y_stats = self.decoder(x_target, R_target)
 
         p_y_loc, p_y_scale = p_y_stats.split(self.config.output_dim, dim=-1)
-        
+
         # bound the variance (minimum 0.1)
         p_y_scale = 0.1 + 0.9 * F.softplus(p_y_scale)
 
         p_yCc = MultivariateNormalDiag(p_y_loc, p_y_scale)
 
         return p_yCc
-    
+
 
 if __name__ == "__main__":
     from argparse import Namespace
     from loss import ELBOLoss
     from dataset.utils import get_dataloader
-    from dataset.datasets import *
+    from dataset.datasets import SetKnowledgeTrendingSinusoids
     import numpy as np
     import random
 
@@ -125,11 +125,11 @@ if __name__ == "__main__":
         output_dim=1,
         xy_encoder_num_hidden=2,
         xy_encoder_hidden_dim=128,
-        data_agg_func='mean',
+        data_agg_func="mean",
         latent_encoder_num_hidden=2,
         decoder_hidden_dim=64,
         decoder_num_hidden=2,
-        decoder_activation='gelu',
+        decoder_activation="gelu",
         hidden_dim=128,
         x_transf_dim=128,
         x_encoder_num_hidden=1,
@@ -138,8 +138,8 @@ if __name__ == "__main__":
         knowledge_extractor_num_hidden=0,
         knowledge_dropout=0,
         knowledge_dim=128,
-        knowledge_merge='sum',
-        text_encoder = 'set',
+        knowledge_merge="sum",
+        text_encoder="set",
         use_knowledge=True,
         freeze_llm=True,
         tune_llm_layer_norms=False,
@@ -147,16 +147,16 @@ if __name__ == "__main__":
         batch_size=64,
         min_num_context=1,
         max_num_context=30,
-        x_sampler='uniform',
+        x_sampler="uniform",
         noise=0,
         # reproducibility
         seed=44,
-        dataset='set-trending-sinusoids',
-        num_targets=50
+        dataset="set-trending-sinusoids",
+        num_targets=50,
     )
     config.device = "cpu"
 
-    dataset = SetKnowledgeTrendingSinusoids(split='train', knowledge_type='abc2')
+    dataset = SetKnowledgeTrendingSinusoids(split="train", knowledge_type="abc2")
     train_dataloader = get_dataloader(dataset, config)
     config.knowledge_input_dim = dataset.knowledge_input_dim
 
@@ -166,7 +166,7 @@ if __name__ == "__main__":
     torch.manual_seed(config.seed)
     np.random.seed(config.seed)
     random.seed(config.seed)
-   
+
     for i, batch in enumerate(train_dataloader):
         print(i)
         context, target, knowledge, _ = batch
@@ -185,4 +185,3 @@ if __name__ == "__main__":
         loss = loss_func(outputs, y_target)
 
         print(loss)
-        

@@ -22,7 +22,9 @@ class Trainer:
         self.last_save_it = last_save_it
 
         self.device = config.device
-        self.train_dataloader, self.val_dataloader, _, extras = setup_dataloaders(config)
+        self.train_dataloader, self.val_dataloader, _, extras = setup_dataloaders(
+            config
+        )
 
         for k, v in extras.items():
             config.__dict__[k] = v
@@ -49,11 +51,11 @@ class Trainer:
 
         if load_path is not None:
             own_trainable_states = set(own_trainable_states)
-            print(f"\n States not loaded from state dict:")
+            print("\n States not loaded from state dict:")
             print(
                 *sorted(list(own_trainable_states.difference(loaded_states))), sep="\n"
             )
-            print(f"Unknown states:")
+            print("Unknown states:")
             print(
                 *sorted(
                     list(loaded_states.difference(set(self.model.state_dict().keys())))
@@ -63,7 +65,6 @@ class Trainer:
 
         self.save_dir = save_dir
 
-        
     def get_loss(self, x_context, y_context, x_target, y_target, knowledge):
         if self.config.sort_context:
             x_context, indices = torch.sort(x_context, dim=1)
@@ -82,11 +83,7 @@ class Trainer:
             )
         loss, kl, negative_ll = self.loss_func(output, y_target)
 
-        results = {
-            'loss': loss,
-            'kl' : kl,
-            'negative_ll': negative_ll
-        }
+        results = {"loss": loss, "kl": kl, "negative_ll": negative_ll}
 
         return results
 
@@ -99,9 +96,7 @@ class Trainer:
         x_target = x_target.to(self.device)
         y_target = y_target.to(self.device)
 
-        results = self.get_loss(
-            x_context, y_context, x_target, y_target, knowledge
-        )
+        results = self.get_loss(x_context, y_context, x_target, y_target, knowledge)
 
         return results
 
@@ -115,9 +110,7 @@ class Trainer:
 
         x_context, y_context = x_target[:, context_idx, :], y_target[:, context_idx, :]
 
-        results = self.get_loss(
-            x_context, y_context, x_target, y_target, knowledge
-        )
+        results = self.get_loss(x_context, y_context, x_target, y_target, knowledge)
 
         return results
 
@@ -125,14 +118,14 @@ class Trainer:
         it = 0
         min_eval_loss = np.inf
         for epoch in range(self.num_epochs + 1):
-            #self.scheduler.step()
+            # self.scheduler.step()
             for batch in self.train_dataloader:
                 self.model.train()
                 self.optimizer.zero_grad()
                 results = self.run_batch_train(batch)
-                loss = results['loss']
-                kl = results['kl']
-                negative_ll = results['negative_ll']
+                loss = results["loss"]
+                kl = results["kl"]
+                negative_ll = results["negative_ll"]
                 loss.backward()
                 self.optimizer.step()
                 wandb.log({"train_loss": loss})
@@ -154,7 +147,7 @@ class Trainer:
                         )
                         torch.save(
                             self.optimizer.state_dict(),
-                             f"{self.save_dir}/optim_best.pt" 
+                            f"{self.save_dir}/optim_best.pt",
                         )
                         print(f"Best model saved at iteration {self.last_save_it + it}")
 
@@ -163,7 +156,7 @@ class Trainer:
         return min_eval_loss
 
     def eval(self):
-        print('Evaluating')
+        print("Evaluating")
         it = 0
         self.model.eval()
         with torch.no_grad():
@@ -176,18 +169,18 @@ class Trainer:
             for batch in self.val_dataloader:
                 for num_context in loss_num_context:
                     results = self.run_batch_eval(batch, num_context=num_context)
-                    loss = results['loss']
+                    loss = results["loss"]
                     val_results = self.run_batch_train(batch)
-                    val_loss = val_results['loss']
+                    val_loss = val_results["loss"]
                     losses_dict[num_context].append(loss.to("cpu").item())
                     val_losses.append(val_loss.to("cpu").item())
-                    
+
                 it += 1
                 if it > MAX_EVAL_IT:
                     break
             losses_dict = {k: np.mean(v) for k, v in losses_dict.items()}
             val_loss = np.mean(val_losses)
-            
+
         return losses_dict, val_loss
 
 
@@ -221,7 +214,7 @@ def meta_train(trial, config, run_name_prefix="run"):
         save_no = 0
     save_dir = f"{save_dir}/{run_name_prefix}_{save_no}"
     os.makedirs(save_dir, exist_ok=True)
-    
+
     trainer = Trainer(config=config, save_dir=save_dir)
 
     config = trainer.config
@@ -230,7 +223,9 @@ def meta_train(trial, config, run_name_prefix="run"):
     config.write_config(f"{save_dir}/config.toml")
 
     wandb.init(
-        project=config.project_name, name=f"{run_name_prefix}_{save_no}", config=vars(config)
+        project=config.project_name,
+        name=f"{run_name_prefix}_{save_no}",
+        config=vars(config),
     )
     best_eval_loss = trainer.train()
     wandb.finish()
@@ -245,7 +240,7 @@ if __name__ == "__main__":
     from config import Config
 
     # read config from config.toml
-    config = toml.load(f"config.toml")
+    config = toml.load("config.toml")
     config = Config(**config)
 
     # set seed
@@ -258,10 +253,6 @@ if __name__ == "__main__":
     study = optuna.create_study(direction="minimize")
 
     study.optimize(
-        lambda x: meta_train(
-            x, 
-            config=config, 
-            run_name_prefix=config.run_name_prefix
-        ),
+        lambda x: meta_train(x, config=config, run_name_prefix=config.run_name_prefix),
         n_trials=config.n_trials,
     )

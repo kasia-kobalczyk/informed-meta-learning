@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from torch.nn import MultiheadAttention
 from transformers import RobertaModel, RobertaTokenizer
 
+
 class MLP(nn.Module):
     def __init__(
         self, input_size, hidden_size, num_hidden, output_size, activation=nn.GELU()
@@ -48,7 +49,7 @@ class XYEncoder(nn.Module):
             num_hidden=config.xy_encoder_num_hidden,
             output_size=config.hidden_dim,
         )
-        if config.data_agg_func == 'cross-attention':
+        if config.data_agg_func == "cross-attention":
             self.cross_attention = MultiheadAttention(
                 config.hidden_dim,
                 num_heads=4,
@@ -64,11 +65,11 @@ class XYEncoder(nn.Module):
         xy = torch.cat([x_context, y_context], dim=-1)
         Rs = self.pairer(xy)
         # aggregate
-        if self.config.data_agg_func == 'mean':
+        if self.config.data_agg_func == "mean":
             R = torch.mean(Rs, dim=1, keepdim=True)  # [bs, 1, r_dim]
-        elif self.config.data_agg_func == 'sum':
+        elif self.config.data_agg_func == "sum":
             R = torch.sum(Rs, dim=1, keepdim=True)
-        elif self.config.data_agg_func == 'cross-attention':
+        elif self.config.data_agg_func == "cross-attention":
             Rs = self.cross_attention(x_target, x_context, Rs)[0]
             R = torch.mean(Rs, dim=1, keepdim=True)
         return R
@@ -96,14 +97,16 @@ class RoBERTa(nn.Module):
 
         self.device = config.device
         self.tokenizer = RobertaTokenizer.from_pretrained(
-                'roberta-base', truncation=True, do_lower_case=True
+            "roberta-base", truncation=True, do_lower_case=True
         )
 
     def forward(self, knowledge):
-
         knowledge = self.tokenizer.batch_encode_plus(
-            knowledge, return_tensors='pt', 
-            return_token_type_ids=True, padding=True, truncation=True
+            knowledge,
+            return_tensors="pt",
+            return_token_type_ids=True,
+            padding=True,
+            truncation=True,
         )
 
         input_ids = knowledge["input_ids"].to(self.device)
@@ -133,6 +136,7 @@ class NoEmbedding(nn.Module):
         else:
             return torch.stack(knowledge).float().to(self.device)
 
+
 class SimpleEmbedding(nn.Module):
     def __init__(self, config):
         super().__init__()
@@ -145,6 +149,7 @@ class SimpleEmbedding(nn.Module):
     def forward(self, knowledge):
         knowledge = torch.tensor(knowledge).long().to(self.embedding.weight.device)
         return self.embedding(knowledge)
+
 
 class SetEmbedding(nn.Module):
     def __init__(self, config):
@@ -163,7 +168,7 @@ class SetEmbedding(nn.Module):
             num_hidden=1,
             output_size=config.knowledge_dim,
         )
-        
+
     def forward(self, knowledge):
         knowledge = knowledge.to(self.device)
         ks = self.h1(knowledge)
@@ -171,16 +176,17 @@ class SetEmbedding(nn.Module):
         k = self.h2(k)
         return k
 
+
 class KnowledgeEncoder(nn.Module):
     def __init__(self, config):
         super(KnowledgeEncoder, self).__init__()
-        if config.text_encoder == 'roberta':
+        if config.text_encoder == "roberta":
             self.text_encoder = RoBERTa(config)
-        elif config.text_encoder == 'simple':
+        elif config.text_encoder == "simple":
             self.text_encoder = SimpleEmbedding(config)
-        elif config.text_encoder == 'none':
+        elif config.text_encoder == "none":
             self.text_encoder = NoEmbedding(config)
-        elif config.text_encoder == 'set':
+        elif config.text_encoder == "set":
             self.text_encoder = SetEmbedding(config)
 
         if config.knowledge_extractor_num_hidden > 0:
@@ -211,22 +217,21 @@ class LatentEncoder(nn.Module):
         self.knowledge_dim = config.knowledge_dim
         self.knowledge_dropout = config.knowledge_dropout
 
-
-        if config.knowledge_merge == 'sum':
+        if config.knowledge_merge == "sum":
             input_dim = config.hidden_dim
 
-        elif config.knowledge_merge == 'concat':
+        elif config.knowledge_merge == "concat":
             input_dim = config.hidden_dim + config.knowledge_dim
 
-        elif config.knowledge_merge == 'mlp':
+        elif config.knowledge_merge == "mlp":
             input_dim = config.hidden_dim
             self.knowledge_merger = MLP(
                 input_size=config.hidden_dim + config.knowledge_dim,
                 hidden_size=config.hidden_dim,
                 num_hidden=1,
-                output_size=config.hidden_dim
+                output_size=config.hidden_dim,
             )
-        
+
         else:
             raise NotImplementedError
 
@@ -244,11 +249,8 @@ class LatentEncoder(nn.Module):
                 output_size=2 * config.hidden_dim,
             )
         else:
-            self.encoder = nn.Linear(
-                input_dim, 2 * config.hidden_dim
-            )
+            self.encoder = nn.Linear(input_dim, 2 * config.hidden_dim)
         self.config = config
-
 
     def forward(self, R, knowledge, n):
         """
@@ -261,31 +263,30 @@ class LatentEncoder(nn.Module):
         else:
             k = self.knowledge_encoder(knowledge)
 
-        if self.config.knowledge_merge == 'sum':
+        if self.config.knowledge_merge == "sum":
             encoder_input = F.relu(R + k)
 
-        elif self.config.knowledge_merge == 'concat':
+        elif self.config.knowledge_merge == "concat":
             encoder_input = torch.cat([R, k], dim=-1)
 
-        elif self.config.knowledge_merge == 'mlp':
+        elif self.config.knowledge_merge == "mlp":
             if knowledge is not None and not drop_knowledge:
                 encoder_input = self.knowledge_merger(torch.cat([R, k], dim=-1))
             else:
                 encoder_input = F.relu(R)
-        
+
         q_z_stats = self.encoder(encoder_input)
-        
+
         return q_z_stats
-    
+
     def get_knowledge_embedding(self, knowledge):
         return self.knowledge_encoder(knowledge).unsqueeze(1)
-
 
 
 class Decoder(nn.Module):
     def __init__(self, config):
         super().__init__()
-        if config.decoder_activation == 'relu':
+        if config.decoder_activation == "relu":
             activation = nn.ReLU()
         else:
             activation = nn.GELU()
@@ -308,4 +309,3 @@ class Decoder(nn.Module):
         XR_target = torch.cat([x_target, R_target], dim=-1)
         p_y_stats = self.mlp(XR_target)
         return p_y_stats
-
